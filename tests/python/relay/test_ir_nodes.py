@@ -99,9 +99,15 @@ def test_tuple():
 def test_local_var():
     name_hint = 's'
     lv = relay.Var(name_hint)
-    lv.name_hint == name_hint
+    assert lv.name_hint == name_hint
+    assert lv.type_annotation is None
     # assert lv.span == None todo(@jroesch): what do we do about spans
     str(lv)
+
+    t1 = relay.ty.TensorType((), "float")
+    lv = relay.Var(name_hint, t1)
+    assert lv.name_hint == name_hint
+    assert lv.type_annotation == t1
 
 
 def test_global_var():
@@ -112,19 +118,9 @@ def test_global_var():
     str(gv)
 
 
-def test_param():
-    lv = relay.Var('x')
-    ty = None
-    param = relay.Param(lv, ty)
-    assert param.var == lv
-    assert param.type == ty
-    assert param.span == None
-    str(param)
-
-
 def test_function():
     param_names = ['a', 'b', 'c', 'd']
-    params = tvm.convert([relay.Param(relay.Var(n), None) for n in param_names])
+    params = tvm.convert([relay.Var(n) for n in param_names])
     ret_type = None
     body = None
     type_params = tvm.convert([])
@@ -154,10 +150,9 @@ def test_let():
     value = relay.Constant(arr)
     # I would prefer that the order of arguments
     # matches syntax let x: t = v in b
-    let = relay.Let(lv, value, lv, ty)
+    let = relay.Let(lv, value, lv)
     assert let.var == lv
     assert let.value == value
-    assert let.value_type == ty
     assert let.body == lv
     assert let.span == None
     str(let)
@@ -175,6 +170,13 @@ def test_if():
     str(ife)
 
 
+def test_tuple_get_item():
+    tup = relay.Var("tuple")
+    get = relay.TupleGetItem(tup, 1)
+    assert get.tuple == tup
+    assert get.index == 1
+    str(get)
+
 if __name__ == "__main__":
     test_bad_constructor()
     test_span()
@@ -187,8 +189,8 @@ if __name__ == "__main__":
     test_tuple()
     test_local_var()
     test_global_var()
-    test_param()
     test_function()
     test_call()
     test_let()
     test_if()
+    test_tuple_get_item()

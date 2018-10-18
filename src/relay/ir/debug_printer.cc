@@ -96,7 +96,9 @@ class TypeDocifier : private TypeFunctor<Doc(const Type& n)> {
   }
 
   std::vector<Doc> DocifyTypeParam(const tvm::Array<TypeParam>& arr) {
-    return MapDocify<TypeParam>(arr, [=](const TypeParam& tp) { return Docify(tp); });
+    return MapDocify<TypeParam>(arr, [=](const TypeParam& tp) {
+        return Docify(tp);
+      });
   }
 
   std::vector<Doc> DocifyTypeConstraint(const tvm::Array<TypeConstraint>& arr) {
@@ -188,10 +190,11 @@ class ExprDocifier : private ExprFunctor<Doc(const Expr& n)> {
     return vec;
   }
 
-  std::vector<Doc> DocifyParamArray(const tvm::Array<Param>& arr) {
+  std::vector<Doc> DocifyParamArray(const tvm::Array<Var>& arr) {
     std::vector<Doc> vec;
-    for (size_t i = 0; i < arr.size(); ++i) {
-      vec.push_back(Docify(arr[i]));
+    for (Var param : arr) {
+      vec.emplace_back(TypeAnnotation(DocOfStr(VarName(param)),
+                                      param->type_annotation));
     }
     return vec;
   }
@@ -212,10 +215,6 @@ class ExprDocifier : private ExprFunctor<Doc(const Expr& n)> {
     return DocOfStr(g->name_hint);
   }
 
-  Doc VisitExpr_(const ParamNode* p) final {
-    return TypeAnnotation(Docify(p->var), p->type);
-  }
-
   Doc VisitExpr_(const FunctionNode* f) final {
     return Group(TypeAnnotation(Seq("(", DocifyParamArray(f->params), ")"), f->ret_type) + Sep() +
                  DocOfStr("=>") + Sep() +
@@ -223,12 +222,12 @@ class ExprDocifier : private ExprFunctor<Doc(const Expr& n)> {
   }
 
   Doc VisitExpr_(const CallNode* c) final {
-    auto args = DocifyExprArray(c->args);
     return Docify(c->op) + Seq("<", DocifyExprArray(c->args), ">");
   }
 
   Doc VisitExpr_(const LetNode* l) final {
-    return Group(DocOfStr("let") + Sep() + TypeAnnotation(Docify(l->var), l->value_type) + Sep() +
+    return Group(DocOfStr("let") + Sep() +
+                 TypeAnnotation(Docify(l->var), l->var->type_annotation) + Sep() +
                  DocOfStr("=") + Sep() + Docify(l->value) + DocOfStr(";") + Endl() +
                  Docify(l->body));
   }
@@ -242,6 +241,10 @@ class ExprDocifier : private ExprFunctor<Doc(const Expr& n)> {
 
   Doc VisitExpr_(const OpNode* o) final {
     return DocOfStr(o->name);
+  }
+
+  Doc VisitExpr_(const TupleGetItemNode* g) final {
+    return Docify(g->tuple) + DocOfStr(std::string(".") + std::to_string(g->index));
   }
 
  public:
@@ -291,7 +294,6 @@ std::string PrintType(const Environment& env, const Type& t) {
 TVM_REGISTER_API("relay._expr._debug_print")
 .set_body([](TVMArgs args, TVMRetValue* ret) {
     NodeRef x = args[1];
-    std::cout << x << std::endl;
     if (x.as<TypeNode>()) {
       *ret = PrintType(args[0], Downcast<Type>(x));
     } else {

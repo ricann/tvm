@@ -80,7 +80,6 @@ class ExprFunctor<R(const Expr& n, Args...)> {
                        Args... args) EXPR_FUNCTOR_DEFAULT;
   virtual R VisitExpr_(const GlobalVarNode* op,
                        Args... args) EXPR_FUNCTOR_DEFAULT;
-  virtual R VisitExpr_(const ParamNode* op, Args... args) EXPR_FUNCTOR_DEFAULT;
   virtual R VisitExpr_(const FunctionNode* op,
                        Args... args) EXPR_FUNCTOR_DEFAULT;
   virtual R VisitExpr_(const CallNode* op, Args... args) EXPR_FUNCTOR_DEFAULT;
@@ -89,6 +88,7 @@ class ExprFunctor<R(const Expr& n, Args...)> {
                        Args... args) EXPR_FUNCTOR_DEFAULT;
   virtual R VisitExpr_(const OpNode* op,
                        Args... args) EXPR_FUNCTOR_DEFAULT;
+  virtual R VisitExpr_(const TupleGetItemNode* op, Args... args) EXPR_FUNCTOR_DEFAULT;
   virtual R VisitExprDefault_(const Node* op, Args...) {
     throw Error(std::string("Do not have a default for ") + op->type_key());
   }
@@ -102,12 +102,12 @@ class ExprFunctor<R(const Expr& n, Args...)> {
     RELAY_EXPR_FUNCTOR_DISPATCH(TupleNode);
     RELAY_EXPR_FUNCTOR_DISPATCH(VarNode);
     RELAY_EXPR_FUNCTOR_DISPATCH(GlobalVarNode);
-    RELAY_EXPR_FUNCTOR_DISPATCH(ParamNode);
     RELAY_EXPR_FUNCTOR_DISPATCH(FunctionNode);
     RELAY_EXPR_FUNCTOR_DISPATCH(CallNode);
     RELAY_EXPR_FUNCTOR_DISPATCH(LetNode);
     RELAY_EXPR_FUNCTOR_DISPATCH(IfNode);
     RELAY_EXPR_FUNCTOR_DISPATCH(OpNode);
+    RELAY_EXPR_FUNCTOR_DISPATCH(TupleGetItemNode);
     return vtable;
   }
 };
@@ -125,12 +125,12 @@ class ExprVisitor : public ::tvm::relay::ExprFunctor<void(const Expr& n)> {
   void VisitExpr_(const GlobalVarNode* op) override;
   void VisitExpr_(const ConstantNode* op) override;
   void VisitExpr_(const TupleNode* op) override;
-  void VisitExpr_(const ParamNode* op) override;
   void VisitExpr_(const FunctionNode* op) override;
   void VisitExpr_(const CallNode* op) override;
   void VisitExpr_(const LetNode* op) override;
   void VisitExpr_(const IfNode* op) override;
   void VisitExpr_(const OpNode* op) override;
+  void VisitExpr_(const TupleGetItemNode* op) override;
   virtual void VisitType(const Type& t);
 };
 
@@ -148,11 +148,11 @@ class ExprMutator
   Expr VisitExpr_(const GlobalVarNode* op) override;
   Expr VisitExpr_(const OpNode* op) override;
   Expr VisitExpr_(const TupleNode* op) override;
-  Expr VisitExpr_(const ParamNode* op) override;
   Expr VisitExpr_(const FunctionNode* op) override;
   Expr VisitExpr_(const CallNode* call_node) override;
   Expr VisitExpr_(const LetNode* op) override;
   Expr VisitExpr_(const IfNode* op) override;
+  Expr VisitExpr_(const TupleGetItemNode* op) override;
   /*! \brief Used to visit the types inside of expressions.
    *
    * Can be overloaded to transform the types in arbitrary

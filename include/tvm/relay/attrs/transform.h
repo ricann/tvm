@@ -68,6 +68,34 @@ struct TakeAttrs : public tvm::AttrsNode<TakeAttrs> {
   }
 };
 
+/*! \brief Attributes that specify a tensor */
+struct InitOpAttrs : public tvm::AttrsNode<InitOpAttrs> {
+  Array<IndexExpr> shape;
+  DataType dtype;
+
+  TVM_DECLARE_ATTRS(InitOpAttrs, "relay.attrs.InitOpAttrs") {
+    TVM_ATTR_FIELD(shape)
+      .describe("Target shape.");
+    TVM_ATTR_FIELD(dtype)
+      .describe("Target data type.")
+      .set_default(Int(0));
+  }
+};  // struct InitOpAttrs
+
+/*! \brief Attributes used in squeeze operators */
+struct SqueezeAttrs : public tvm::AttrsNode<SqueezeAttrs> {
+  Array<IndexExpr> axes;
+
+  TVM_DECLARE_ATTRS(SqueezeAttrs, "relay.attrs.SqueezeAttrs") {
+    TVM_ATTR_FIELD(axes)
+        .describe("The axes to squeeze in the input tensor."
+                  "If `axes = []`, all axis of dimension 1 get squeezed;"
+                  "Else, the dimension in axes get squeezed."
+                  "It is an error if an axes does not has dimension 1.")
+        .set_default(Array<IndexExpr>({}));
+  }
+};  // struct SqueezeAttrs
+
 }  // namespace relay
 }  // namespace tvm
 #endif  // TVM_RELAY_ATTRS_TRANSFORM_H_

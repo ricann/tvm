@@ -252,15 +252,6 @@ struct AlphaEq : ExprFunctor<void(const Expr&, const Expr&)> {
     }
   }
 
-  void VisitExpr_(const ParamNode* p1, const Expr& e2) final {
-    if (const ParamNode* p2 = e2.as<ParamNode>()) {
-      eq_map.Set(p1->var, p2->var);
-      equal = equal && AlphaEqual(p1->type, p2->type);
-    } else {
-      equal = false;
-    }
-  }
-
   void VisitExpr_(const FunctionNode* func1, const Expr& e2) final {
     if (const FunctionNode* func2 = e2.as<FunctionNode>()) {
       if (func1->params.size() != func2->params.size()) {
@@ -268,8 +259,26 @@ struct AlphaEq : ExprFunctor<void(const Expr&, const Expr&)> {
         return;
       }
 
-      for (size_t i = 0U; i < func1->params.size(); i++) {
-        this->VisitExpr(func1->params[i], func2->params[i]);
+      if (func1->type_params.size() != func2->type_params.size()) {
+        equal = false;
+        return;
+      }
+
+      for (size_t i = 0; i < func1->params.size(); ++i) {
+        MergeVarDecl(func1->params[i], func2->params[i]);
+      }
+      if (!equal) return;
+
+      for (size_t i = 0U; i < func1->type_params.size(); i++) {
+        equal = equal && AlphaEqual(func1->type_params[i], func2->type_params[i]);
+        if (!equal) {
+          return;
+        }
+      }
+
+      equal = equal && AlphaEqual(func1->ret_type, func2->ret_type);
+      if (!equal) {
+        return;
       }
 
       this->VisitExpr(func1->body, func2->body);
@@ -287,10 +296,27 @@ struct AlphaEq : ExprFunctor<void(const Expr&, const Expr&)> {
         return;
       }
 
+      if (op->type_args.size() != call->type_args.size()) {
+        equal = false;
+        return;
+      }
+
+      // checking attrs by pointer equality for now
+      equal = equal && (op->attrs == call->attrs);
+      if (!equal) {
+        return;
+      }
+
       for (size_t i = 0U; i < op->args.size(); i++) {
         this->VisitExpr(op->args[i], call->args[i]);
       }
 
+      for (size_t i = 0U; i < op->type_args.size(); i++) {
+        equal = equal && AlphaEqual(op->type_args[i], call->type_args[i]);
+        if (!equal) {
+          return;
+        }
+      }
     } else {
       equal = false;
     }
@@ -298,7 +324,7 @@ struct AlphaEq : ExprFunctor<void(const Expr&, const Expr&)> {
 
   void VisitExpr_(const LetNode* op, const Expr& e2) final {
     if (const LetNode* let = e2.as<LetNode>()) {
-      eq_map.Set(op->var, let->var);
+      MergeVarDecl(op->var, let->var);
       this->VisitExpr(op->value, let->value);
       this->VisitExpr(op->body, let->body);
     } else {
@@ -334,6 +360,29 @@ struct AlphaEq : ExprFunctor<void(const Expr&, const Expr&)> {
     } else {
       equal = false;
     }
+  }
+
+  void VisitExpr_(const TupleGetItemNode* op, const Expr& e2) final {
+    if (const TupleGetItemNode* proj = e2.as<TupleGetItemNode>()) {
+      this->VisitExpr(op->tuple, proj->tuple);
+      equal = equal && (op->index == proj->index);
+    } else {
+      equal = false;
+    }
+  }
+
+ private:
+  void MergeVarDecl(const Var& var1, const Var& var2) {
+    if (var1->type_annotation.defined() != var2->type_annotation.defined()) {
+      equal = false;
+      return;
+    }
+    if (var1->type_annotation.defined() &&
+        !AlphaEqual(var1->type_annotation, var2->type_annotation)) {
+      equal = false;
+      return;
+    }
+    eq_map.Set(var1, var2);
   }
 };
 
