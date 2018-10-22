@@ -35,7 +35,7 @@ from tvm.contrib import graph_runtime
 # First, let's define a neural network with nnvm python frontend.
 # For simplicity, we'll use pre-defined resnet-18 network in NNVM.
 # Parameters are initialized with Xavier initializer.
-# NNVM also supports other model formats such as MXNet, CoreML, ONNX and 
+# NNVM also supports other model formats such as MXNet, CoreML, ONNX and
 # Tensorflow.
 #
 # In this tutorial, we assume we will do inference on our device
@@ -77,7 +77,7 @@ print(net.debug_str())
 # in this example. Then the machine code will be generated as the module library.
 
 opt_level = 3
-target = tvm.target.cuda()
+target = tvm.target.create("llvm")
 with nnvm.compiler.build_config(opt_level=opt_level):
     graph, lib, params = nnvm.compiler.build(
         net, target, shape={"data": data_shape}, params=params)
@@ -88,7 +88,7 @@ with nnvm.compiler.build_config(opt_level=opt_level):
 # Now we can create graph runtime and run the module on Nvidia GPU.
 
 # create random input
-ctx = tvm.gpu()
+ctx = tvm.cpu()
 data = np.random.uniform(-1, 1, size=data_shape).astype("float32")
 # create module
 module = graph_runtime.create(graph, lib, ctx)

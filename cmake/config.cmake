@@ -74,7 +74,7 @@ set(SGX_MODE "SIM")
 set(RUST_SGX_SDK "/path/to/rust-sgx-sdk")
 
 # Whether enable RPC runtime
-set(USE_RPC ON)
+set(USE_RPC OFF)
 
 # Whether embed stackvm into the runtime
 set(USE_STACKVM_RUNTIME OFF)
