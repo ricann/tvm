@@ -98,7 +98,7 @@ module.set_input("data", data)
 module.set_input(**params)
 # run
 time_start=time.time()
-for i in range(2000):
+for i in range(1000):
     module.run()
 time_end=time.time()
 print("total module run time: ", time_end-time_start)

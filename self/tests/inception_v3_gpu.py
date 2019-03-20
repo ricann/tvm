@@ -82,7 +82,7 @@ print(net.debug_str())
 # in this example. Then the machine code will be generated as the module library.
 
 opt_level = 3
-target = tvm.target.create("llvm")
+target = tvm.target.cuda()
 with nnvm.compiler.build_config(opt_level=opt_level):
     graph, lib, params = nnvm.compiler.build(
         net, target, shape={"data": data_shape}, params=params)
@@ -93,7 +93,7 @@ with nnvm.compiler.build_config(opt_level=opt_level):
 # Now we can create graph runtime and run the module on Nvidia GPU.
 
 # create random input
-ctx = tvm.cpu()
+ctx = tvm.gpu()
 data = np.random.uniform(-1, 1, size=data_shape).astype("float32")
 # create module
 module = graph_runtime.create(graph, lib, ctx)
@@ -102,7 +102,8 @@ module.set_input("data", data)
 module.set_input(**params)
 # run
 time_start=time.time()
-module.run()
+for i in range(1000):
+    module.run()
 time_end=time.time()
 print("total module run time: ", time_end-time_start)
 # get output

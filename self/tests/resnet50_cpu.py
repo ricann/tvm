@@ -31,7 +31,7 @@ import nnvm.testing
 import tvm
 from tvm.contrib import graph_runtime
 
-num_threads = 4
+num_threads = 8
 os.environ["TVM_NUM_THREADS"] = str(num_threads)
 
 ######################################################################
