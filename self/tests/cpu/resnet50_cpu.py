@@ -102,9 +102,10 @@ module.set_input("data", data)
 module.set_input(**params)
 # run
 time_start=time.time()
-module.run()
+for i in range(100):
+    module.run()
 time_end=time.time()
-print("total module run time: ", time_end-time_start)
+print("total module run time: ", (time_end-time_start)/100.)
 # get output
 out = module.get_output(0, tvm.nd.empty(out_shape))
 # convert to numpy

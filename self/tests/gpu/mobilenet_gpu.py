@@ -54,8 +54,8 @@ image_shape = (3, 224, 224)
 data_shape = (batch_size,) + image_shape
 out_shape = (batch_size, num_class)
 
-net, params = nnvm.testing.vgg.get_workload(
-        batch_size=batch_size, num_classes=num_class, image_shape=image_shape)
+net, params = nnvm.testing.mobilenet.get_workload(
+    batch_size=batch_size, num_classes=num_class, image_shape=image_shape)
 print(net.debug_str())
 
 ######################################################################

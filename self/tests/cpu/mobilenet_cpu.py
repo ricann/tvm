@@ -54,8 +54,8 @@ image_shape = (3, 224, 224)
 data_shape = (batch_size,) + image_shape
 out_shape = (batch_size, num_class)
 
-net, params = nnvm.testing.vgg.get_workload(
-        batch_size=batch_size, num_classes=num_class, image_shape=image_shape)
+net, params = nnvm.testing.mobilenet.get_workload(
+    batch_size=batch_size, num_classes=num_class, image_shape=image_shape)
 print(net.debug_str())
 
 ######################################################################
@@ -82,7 +82,7 @@ print(net.debug_str())
 # in this example. Then the machine code will be generated as the module library.
 
 opt_level = 3
-target = tvm.target.cuda()
+target = tvm.target.create("llvm")
 with nnvm.compiler.build_config(opt_level=opt_level):
     graph, lib, params = nnvm.compiler.build(
         net, target, shape={"data": data_shape}, params=params)
@@ -93,7 +93,7 @@ with nnvm.compiler.build_config(opt_level=opt_level):
 # Now we can create graph runtime and run the module on Nvidia GPU.
 
 # create random input
-ctx = tvm.gpu()
+ctx = tvm.cpu()
 data = np.random.uniform(-1, 1, size=data_shape).astype("float32")
 # create module
 module = graph_runtime.create(graph, lib, ctx)
